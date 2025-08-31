@@ -135,7 +135,7 @@ h1 {
     transform: scale(1.05);
 }
 
-.sound-pad.playing {
+.sound-selector-btn.playing {
     background: var(--secondary-color);
     color: var(--bg-color);
 }
