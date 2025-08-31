@@ -204,11 +204,19 @@
                             </label>
                             <input type="range" id="sound-volume-slider" min="0" max="1" step="0.01" value="0.7" class="fm-param">
                         </div>
+
+                        <div class="fm-control-group">
+                            <label class="fm-control-label">
+                                Затухание (с)
+                                <span class="fm-control-value" id="decay-value">0.20</span>
+                            </label>
+                            <input type="range" id="decay-slider" min="0.01" max="1" step="0.01" value="0.2" class="fm-param">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
                 <!-- User Manual Panel -->
                 <div class="panel" id="user-manual">
                     <h2 class="panel-title">Как пользоваться</h2>
@@ -239,6 +247,17 @@
                             <li>Отрегулируйте <strong>питч</strong> (высоту тона), <strong>глубину модуляции</strong> (тембр) и <strong>громкость</strong> для выбранного звука.</li>
                             <li>Изменения сохраняются автоматически и будут использоваться при следующем воспроизведении.</li>
                         </ol>
+                    </div>
+                </div>
+
+                <!-- Audition Buttons Panel -->
+                <div class="panel" id="audition-panel">
+                    <h2 class="panel-title">Сбивки</h2>
+                    <div class="audition-buttons">
+                        <button class="audition-btn" data-break="zalzala">Зелзела</button>
+                        <button class="audition-btn" data-break="phislana">Фислана</button>
+                        <button class="audition-btn" data-break="mrigchala">Мригчала</button>
+                        <button class="audition-btn" data-break="visphotak">Виспхотак</button>
                     </div>
                 </div>
             </div>

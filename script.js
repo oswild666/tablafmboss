@@ -25,9 +25,11 @@
         const pitchSlider = document.getElementById('pitch-slider');
         const modDepthSlider = document.getElementById('mod-depth-slider');
         const soundVolumeSlider = document.getElementById('sound-volume-slider');
+        const decaySlider = document.getElementById('decay-slider');
         const pitchValue = document.getElementById('pitch-value');
         const modDepthValue = document.getElementById('mod-depth-value');
         const soundVolumeValue = document.getElementById('sound-volume-value');
+        const decayValue = document.getElementById('decay-value');
 
         // Глобальные переменные
         let isPlaying = false;
@@ -50,14 +52,14 @@
 
         // Настройки FM для каждого звука
         const soundSettings = [
-            { pitch: 120, modDepth: 80, volume: 0.7 },  // Dha
-            { pitch: 150, modDepth: 100, volume: 0.6 }, // Dhin
-            { pitch: 300, modDepth: 200, volume: 0.5 }, // Ta
-            { pitch: 350, modDepth: 250, volume: 0.5 }, // Tin
-            { pitch: 250, modDepth: 180, volume: 0.4 }, // Na
-            { pitch: 400, modDepth: 300, volume: 0.4 }, // Tirkita
-            { pitch: 200, modDepth: 150, volume: 0.5 }, // Kat
-            { pitch: 180, modDepth: 120, volume: 0.5 }  // Ge
+            { pitch: 120, modDepth: 80, volume: 0.7, decay: 0.2 },  // Dha
+            { pitch: 150, modDepth: 100, volume: 0.6, decay: 0.2 }, // Dhin
+            { pitch: 300, modDepth: 200, volume: 0.5, decay: 0.2 }, // Ta
+            { pitch: 350, modDepth: 250, volume: 0.5, decay: 0.2 }, // Tin
+            { pitch: 250, modDepth: 180, volume: 0.4, decay: 0.2 }, // Na
+            { pitch: 400, modDepth: 300, volume: 0.4, decay: 0.2 }, // Tirkita
+            { pitch: 200, modDepth: 150, volume: 0.5, decay: 0.2 }, // Kat
+            { pitch: 180, modDepth: 120, volume: 0.5, decay: 0.2 }  // Ge
         ];
 
         // Создание визуализатора
@@ -180,7 +182,7 @@
             const settings = soundSettings[soundIndex];
 
             // Для сбивок уменьшаем длительность
-            const decay = isBreak ? 0.05 : 0.2;
+            const decay = isBreak ? 0.05 : settings.decay;
 
             // Несущий осциллятор
             const carrier = audioCtx.createOscillator();
@@ -496,10 +498,12 @@
             pitchSlider.value = settings.pitch;
             modDepthSlider.value = settings.modDepth;
             soundVolumeSlider.value = settings.volume;
+            decaySlider.value = settings.decay;
 
             pitchValue.textContent = settings.pitch;
             modDepthValue.textContent = settings.modDepth;
             soundVolumeValue.textContent = Math.round(settings.volume * 100) + '%';
+            decayValue.textContent = settings.decay.toFixed(2);
         }
 
         // Инициализация
@@ -548,6 +552,15 @@
 
             generateBtn.addEventListener('click', generatePatternAndDisplay);
 
+            // Audition buttons
+            document.querySelectorAll('.audition-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const breakType = btn.getAttribute('data-break');
+                    const secondsPerBeat = 60.0 / tempo;
+                    playBreak(audioCtx.currentTime, secondsPerBeat * 2, breakType, 0, 0);
+                });
+            });
+
             // Обработчики для звуковых панелей
             document.querySelectorAll('.sound-pad').forEach(pad => {
                 pad.addEventListener('click', () => {
@@ -591,6 +604,11 @@
             soundVolumeSlider.addEventListener('input', () => {
                 soundSettings[currentSoundIndex].volume = parseFloat(soundVolumeSlider.value);
                 soundVolumeValue.textContent = Math.round(soundVolumeSlider.value * 100) + '%';
+            });
+
+            decaySlider.addEventListener('input', () => {
+                soundSettings[currentSoundIndex].decay = parseFloat(decaySlider.value);
+                decayValue.textContent = parseFloat(decaySlider.value).toFixed(2);
             });
 
             // Инициализация первого паттерна

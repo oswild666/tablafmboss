@@ -550,3 +550,20 @@
     background: rgba(148, 0, 211, 0.4) !important;
     border: 1px solid #9400d3;
 }
+
+/* Audition Panel Styles */
+#audition-panel {
+    margin-top: 30px;
+}
+
+.audition-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.audition-btn {
+    background: linear-gradient(to right, #00f2fe, #4facfe) !important;
+    color: #0f0c29 !important;
+    font-weight: bold;
+}
