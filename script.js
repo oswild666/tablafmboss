@@ -17,7 +17,7 @@
         const pitchAccentValue = document.getElementById('pitch-accent-value');
         const velocityAccentValue = document.getElementById('velocity-accent-value');
         const swingValue = document.getElementById('swing-value');
-        const taalSelect = document.getElementById('taal-select');
+        const styleSelect = document.getElementById('style-select');
         const breakTypeSelect = document.getElementById('break-type');
         const modeSelect = document.getElementById('mode-select');
         const playBtn = document.getElementById('play-btn');
@@ -50,7 +50,7 @@
         let nextNoteTime = 0;
         let currentStep = 0;
         let currentPattern = [];
-        let currentTaal = 'teental';
+        let currentStyle = 'teental';
         let tempo = 140;
         let masterVolume = 0.7;
         let complexity = 7;
@@ -341,9 +341,63 @@
             }
         }
 
+        function generateSalsaPattern() {
+            const pattern = [];
+            const clave = [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0];
+            const tumbao = [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1];
+            const hihat = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+            for (let i = 0; i < 16; i++) {
+                let sound = null;
+                if (clave[i] === 1) {
+                    sound = 4; // Na
+                } else if (tumbao[i] === 1) {
+                    sound = 0; // Dha
+                } else if (hihat[i] === 1 && Math.random() < 0.5) {
+                    sound = 3; // Tin
+                }
+                pattern.push({ sound: sound, break: null, accent: { pitch: false, velocity: false } });
+            }
+            return pattern;
+        }
+
+        function generateGrimePattern() {
+            const pattern = [];
+            const kick = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0];
+            const snare = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];
+            const hihat = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0];
+
+            for (let i = 0; i < 16; i++) {
+                let sound = null;
+                if (kick[i] === 1) {
+                    sound = 7; // Ge
+                } else if (snare[i] === 1) {
+                    sound = 2; // Ta
+                } else if (hihat[i] === 1) {
+                    sound = 3; // Tin
+                }
+
+                if (Math.random() < complexity / 20) {
+                    if (Math.random() < 0.5) {
+                        sound = 5; // Tirkita for fast rolls
+                    } else {
+                        sound = 3; // Tin
+                    }
+                }
+                pattern.push({ sound: sound, break: null, accent: { pitch: false, velocity: false } });
+            }
+            return pattern;
+        }
+
         // Создание ритмического паттерна
         function generatePattern() {
-            const taal = taals[currentTaal];
+            if (currentStyle === 'salsa') {
+                return generateSalsaPattern();
+            } else if (currentStyle === 'grime') {
+                return generateGrimePattern();
+            }
+
+            const taal = taals[currentStyle];
             const pattern = [];
 
             // Базовые позиции ударов
@@ -378,9 +432,9 @@
                 // Добавление сбивок
                 if (sound !== null && Math.random() * 100 < breakFrequency) {
                     let availableBreaks = ['triplets', 'fast', 'superfast', 'ultrafast'];
-                    if (i === 8 && currentTaal === 'teental') availableBreaks.push('zalzala');
-                    if (i === 10 && currentTaal === 'teental') availableBreaks.push('phislana');
-                    if (i === 13 && currentTaal === 'teental') availableBreaks.push('mrigchala');
+                    if (i === 8 && currentStyle === 'teental') availableBreaks.push('zalzala');
+                    if (i === 10 && currentStyle === 'teental') availableBreaks.push('phislana');
+                    if (i === 13 && currentStyle === 'teental') availableBreaks.push('mrigchala');
 
                     let type;
                     if (breakType === 'mixed') {
@@ -449,9 +503,9 @@
 
         // Отображение паттерна
         function displayPattern(pattern) {
-            const taal = taals[currentTaal];
+            const matras = taals[currentStyle] ? taals[currentStyle].matras : 16;
             rhythmGrid.innerHTML = '';
-            rhythmGrid.style.gridTemplateColumns = `repeat(${taal.matras}, 1fr)`;
+            rhythmGrid.style.gridTemplateColumns = `repeat(${matras}, 1fr)`;
 
             pattern.forEach((item, index) => {
                 const cell = document.createElement('div');
@@ -505,7 +559,7 @@
             // Планируем звуки на ближайшие 100 мс
             while (nextNoteTime < currentTime + 0.1) {
                 const pattern = currentPattern;
-                const taal = taals[currentTaal];
+                const matras = taals[currentStyle] ? taals[currentStyle].matras : 16;
 
                 if (currentStep === 0) {
                     cycleCount++;
@@ -519,7 +573,7 @@
                 // Проигрываем звук, если он есть
                 const currentItem = pattern[stepToPlay];
 
-                if (cycleCount > 0 && cycleCount % 4 === 0 && currentStep === taal.matras - 1) {
+                if (cycleCount > 0 && cycleCount % 4 === 0 && currentStep === matras - 1) {
                     playBreak(nextNoteTime, secondsPerBeat * 2, 'visphotak', 0, currentStep);
                 } else {
                     if (currentItem.sound !== null) {
@@ -643,9 +697,13 @@
                 outputMode = outputModeSelect.value;
             });
 
-            taalSelect.addEventListener('change', () => {
-                currentTaal = taalSelect.value;
-                taalInfo.textContent = taalInfoText[currentTaal];
+            styleSelect.addEventListener('change', () => {
+                currentStyle = styleSelect.value;
+                if (taalInfoText[currentStyle]) {
+                    taalInfo.textContent = taalInfoText[currentStyle];
+                } else {
+                    taalInfo.textContent = `Стиль: ${currentStyle}`;
+                }
                 generatePatternAndDisplay();
             });
 
