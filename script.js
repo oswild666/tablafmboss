@@ -509,7 +509,7 @@
             });
 
             // Обработчики для FM-параметров
-            pitchSlider.addEventListener('input', ()_ => {
+            pitchSlider.addEventListener('input', () => {
                 soundSettings[currentSoundIndex].pitch = parseInt(pitchSlider.value);
                 pitchValue.textContent = pitchSlider.value;
             });
