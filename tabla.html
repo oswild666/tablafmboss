@@ -58,28 +58,21 @@
                         <input type="range" id="tempo" min="60" max="300" value="140">
                         <span id="tempo-value">140</span>
                     </div>
-                    
                     <div class="control-group">
                         <label class="control-label">Общая громкость</label>
                         <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
                         <span id="volume-value">70%</span>
                     </div>
-                </div>
-                
-                <div class="controls">
                     <div class="control-group">
                         <label class="control-label">Частота сбивок (%)</label>
                         <input type="range" id="break-frequency" min="0" max="100" value="25">
                         <span id="break-frequency-value">25%</span>
                     </div>
-                    
                     <div class="control-group">
                         <label class="control-label">Сложность</label>
                         <input type="range" id="complexity" min="1" max="10" value="7">
                         <span id="complexity-value">Высокая</span>
                     </div>
-                </div>
-                <div class="controls">
                     <div class="control-group">
                         <label class="control-label">Акцент питча (Hz)</label>
                         <input type="range" id="pitch-accent" min="0" max="100" value="0">
@@ -94,6 +87,20 @@
                         <label class="control-label">Свинг (%)</label>
                         <input type="range" id="swing" min="0" max="100" value="0">
                         <span id="swing-value">0</span>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">MIDI Выход</label>
+                        <select id="midi-output-select">
+                            <option value="none">Нет</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Режим выхода</label>
+                        <select id="output-mode-select">
+                            <option value="internal">Внутренний звук</option>
+                            <option value="midi">MIDI</option>
+                            <option value="both">Оба</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -205,7 +212,6 @@
                             </label>
                             <input type="range" id="pitch-slider" min="50" max="700" value="120" class="fm-param">
                         </div>
-                        
                         <div class="fm-control-group">
                             <label class="fm-control-label">
                                 Глубина модуляции 
@@ -213,7 +219,8 @@
                             </label>
                             <input type="range" id="mod-depth-slider" min="20" max="500" value="80" class="fm-param">
                         </div>
-                        
+                    </div>
+                    <div class="fm-controls">
                         <div class="fm-control-group">
                             <label class="fm-control-label">
                                 Громкость 
@@ -221,7 +228,6 @@
                             </label>
                             <input type="range" id="sound-volume-slider" min="0" max="1" step="0.01" value="0.7" class="fm-param">
                         </div>
-
                         <div class="fm-control-group">
                             <label class="fm-control-label">
                                 Затухание (с)
@@ -257,6 +263,8 @@
                             </label>
                             <input type="range" id="mod2-octave-slider" min="0" max="8" value="4" class="fm-param">
                         </div>
+                    </div>
+                    <div class="fm-controls">
                         <div class="fm-control-group">
                             <label class="fm-control-label">
                                 Расстройка (центы)

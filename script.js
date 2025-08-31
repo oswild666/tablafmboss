@@ -256,6 +256,15 @@
             carrier.stop(time + 0.001 + decay);
             modulator1.stop(time + 0.001 + decay);
             modulator2.stop(time + 0.001 + decay);
+
+            // Highlight the sound selector button
+            const soundButton = document.querySelector(`.sound-selector-btn[data-sound="${soundIndex}"]`);
+            if (soundButton) {
+                soundButton.classList.add('playing');
+                setTimeout(() => {
+                    soundButton.classList.remove('playing');
+                }, 100);
+            }
         }
 
         // Создание различных типов сбивок

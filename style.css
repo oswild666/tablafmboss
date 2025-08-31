@@ -135,6 +135,11 @@ h1 {
     transform: scale(1.05);
 }
 
+.sound-pad.playing {
+    background: var(--secondary-color);
+    color: var(--bg-color);
+}
+
 .sound-symbol {
     font-size: 1.2rem;
     margin-bottom: 0.2rem;
@@ -147,7 +152,7 @@ h1 {
 
 .controls {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: var(--spacing-unit);
     margin-bottom: var(--spacing-unit);
 }
@@ -192,6 +197,11 @@ select, button {
     color: var(--text-color);
     font-size: var(--font-size-sm);
     cursor: pointer;
+}
+
+select {
+    background: #ccc;
+    color: #000;
 }
 
 select:focus, button:focus {
@@ -362,7 +372,7 @@ footer {
 
 .fm-controls {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
 }
 
