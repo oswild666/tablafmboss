@@ -522,3 +522,31 @@
 .manual-content strong {
     color: #ff8c00;
 }
+
+/* New Break Type Styles */
+.zalzala {
+    background: rgba(255, 100, 0, 0.4) !important;
+    border: 1px solid #ff6400;
+}
+
+.phislana {
+    background: rgba(0, 191, 255, 0.4) !important;
+    border: 1px solid #00bfff;
+}
+
+.mrigchala {
+    background: rgba(50, 205, 50, 0.3) !important;
+    border: 1px solid #32cd32;
+    font-style: italic;
+}
+
+.visphotak {
+    background: rgba(255, 215, 0, 0.5) !important;
+    border: 1px solid #ffd700;
+    animation: pulse 0.5s infinite;
+}
+
+.chakrabhram {
+    background: rgba(148, 0, 211, 0.4) !important;
+    border: 1px solid #9400d3;
+}

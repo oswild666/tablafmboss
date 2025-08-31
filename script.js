@@ -13,6 +13,7 @@
         const complexityValue = document.getElementById('complexity-value');
         const taalSelect = document.getElementById('taal-select');
         const breakTypeSelect = document.getElementById('break-type');
+        const modeSelect = document.getElementById('mode-select');
         const playBtn = document.getElementById('play-btn');
         const generateBtn = document.getElementById('generate-btn');
         const rhythmGrid = document.getElementById('rhythm-grid');
@@ -44,6 +45,8 @@
         let currentSoundIndex = 0;
         let analyser;
         let dataArray;
+        let cycleCount = 0;
+        let currentMode = 'normal';
 
         // Настройки FM для каждого звука
         const soundSettings = [
@@ -102,6 +105,30 @@
             jhumra: "Джхумра - таал из 14 матров с делением 2+3+2+3+2+2. Часто используется в медитативной музыке."
         };
 
+        // Новые ритмические сбивки
+        const breakPatterns = {
+            zalzala: {
+                name: "Зелзела",
+                formula: [0, 7, 5, 7, 0], // | धा गे तिरकिट गे धा |
+                rule: "5-ударный взрыв на 9-м ударе, смещение на 3/8"
+            },
+            phislana: {
+                name: "ФИСЛАНА",
+                formula: [3, 4, 5, 1, 1, 2, 0], // | टिन ना तिरकिट धिन धिन टा धा |
+                rule: "7-ударная фраза на 11-м ударе, каждый удар на 25% короче"
+            },
+            mrigchala: {
+                name: "Мригчала",
+                formula: [6, 3, 4], // | (soft) कत टिन ना |
+                rule: "Тихая микрофраза 3+2+2 на 14-м ударе"
+            },
+            visphotak: {
+                name: "Виспхотак",
+                formula: [1, 1, 0, 1, 1, 0, 1, 1, 0], // | धिन धिन धा | धिन धिन धा | धिन धин धा |
+                rule: "9-ударная полиритмия 3:3:3 вместо финального 'धा' каждые 4 цикла"
+            }
+        };
+
         // Определение таалов
         const taals = {
             teental: {
@@ -149,7 +176,7 @@
         };
 
         // Создание FM-перкуссии
-        function playSound(soundIndex, time, isBreak = false) {
+        function playSound(soundIndex, time, isBreak = false, volumeMultiplier = 1.0) {
             const settings = soundSettings[soundIndex];
 
             // Для сбивок уменьшаем длительность
@@ -172,7 +199,7 @@
             // Узел огибающей
             const envelope = audioCtx.createGain();
             envelope.gain.setValueAtTime(0, time);
-            envelope.gain.linearRampToValueAtTime(settings.volume * masterVolume, time + 0.001);
+            envelope.gain.linearRampToValueAtTime(settings.volume * masterVolume * volumeMultiplier, time + 0.001);
             envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.001 + decay);
 
             // Соединения
@@ -190,43 +217,63 @@
         }
 
         // Создание различных типов сбивок
-        function playBreak(time, duration, breakType, soundIndex) {
+        function playBreak(time, duration, breakType, soundIndex, currentStep) {
             let numNotes, noteDuration;
+            const secondsPerBeat = 60.0 / tempo;
+
+            const breakPattern = breakPatterns[breakType];
+            if (breakPattern) {
+                const formula = breakPattern.formula;
+                numNotes = formula.length;
+
+                if (breakType === 'zalzala' && currentStep !== 8) return;
+                if (breakType === 'phislana' && currentStep !== 10) return;
+                if (breakType === 'mrigchala' && currentStep !== 13) return;
+                if (breakType === 'visphotak' && (cycleCount % 4 !== 0 || currentStep !== taals[currentTaal].matras - 1)) return;
+
+
+                let noteSpacing = duration / numNotes;
+                if (breakType === 'phislana') {
+                    noteSpacing *= 0.75;
+                } else if (breakType === 'zalzala') {
+                    noteSpacing = (3 / 8 * secondsPerBeat) / 5;
+                } else if (breakType === 'visphotak') {
+                    // 3 triplets over 2 beats
+                    noteSpacing = (2 * secondsPerBeat) / 9;
+                }
+
+                for (let i = 0; i < numNotes; i++) {
+                    const noteTime = time + i * noteSpacing;
+                    const volumeMultiplier = breakType === 'mrigchala' ? 0.3 : 1.0;
+                    playSound(formula[i], noteTime, true, volumeMultiplier);
+                }
+                return;
+            }
 
             switch(breakType) {
                 case 'triplets':
-                    // Триплеты (3 ноты за время одной)
                     numNotes = 3;
                     noteDuration = duration / numNotes;
                     break;
-
                 case 'fast':
-                    // Быстрые (1/16 ноты)
                     numNotes = Math.max(4, Math.floor(duration * tempo / 15));
                     noteDuration = duration / numNotes;
                     break;
-
                 case 'superfast':
-                    // Супербыстрые (1/32 ноты)
                     numNotes = Math.max(8, Math.floor(duration * tempo / 7));
                     noteDuration = duration / numNotes;
                     break;
-
                 case 'ultrafast':
-                    // Ультрабыстрые (1/64 ноты)
                     numNotes = Math.max(16, Math.floor(duration * tempo / 3));
                     noteDuration = duration / numNotes;
                     break;
-
                 default: // mixed
-                    // Смешанные типы
                     const types = ['triplets', 'fast', 'superfast', 'ultrafast'];
                     const randomType = types[Math.floor(Math.random() * types.length)];
-                    playBreak(time, duration, randomType, soundIndex);
+                    playBreak(time, duration, randomType, soundIndex, currentStep);
                     return;
             }
 
-            // Создаем серию ударов
             for (let i = 0; i < numNotes; i++) {
                 const noteTime = time + i * noteDuration;
                 playSound(soundIndex, noteTime, true);
@@ -269,18 +316,27 @@
 
                 // Добавление сбивок
                 if (sound !== null && Math.random() * 100 < breakFrequency) {
-                    // Определяем тип сбивки
-                    let type = breakType;
-                    if (type === 'mixed') {
-                        const types = ['triplets', 'fast', 'superfast', 'ultrafast'];
-                        type = types[Math.floor(Math.random() * types.length)];
+                    let availableBreaks = ['triplets', 'fast', 'superfast', 'ultrafast'];
+                    if (i === 8 && currentTaal === 'teental') availableBreaks.push('zalzala');
+                    if (i === 10 && currentTaal === 'teental') availableBreaks.push('phislana');
+                    if (i === 13 && currentTaal === 'teental') availableBreaks.push('mrigchala');
+
+                    let type;
+                    if (breakType === 'mixed') {
+                        type = availableBreaks[Math.floor(Math.random() * availableBreaks.length)];
+                    } else {
+                        if (availableBreaks.includes(breakType)) {
+                            type = breakType;
+                        }
                     }
 
-                    breakInfo = {
-                        type: type,
-                        duration: 0.5 + Math.random() * 0.5, // От 0.5 до 1.0 матра
-                        soundIndex: sound
-                    };
+                    if (type) {
+                        breakInfo = {
+                            type: type,
+                            duration: 0.5 + Math.random() * 0.5,
+                            soundIndex: sound
+                        };
+                    }
                 }
 
                 pattern.push({
@@ -327,20 +383,15 @@
 
                     if (item.break) {
                         // Добавляем визуальные индикаторы для разных типов сбивок
+                        cell.classList.add(item.break.type);
                         switch(item.break.type) {
                             case 'triplets':
-                                cell.classList.add('triplet');
                                 cell.innerHTML += '<div class="triplet-badge">3</div>';
                                 break;
-                            case 'fast':
-                                cell.classList.add('fast');
-                                break;
                             case 'superfast':
-                                cell.classList.add('super-fast');
                                 cell.innerHTML += '<div class="super-fast-badge">32</div>';
                                 break;
                             case 'ultrafast':
-                                cell.classList.add('super-fast');
                                 cell.innerHTML += '<div class="super-fast-badge">64</div>';
                                 break;
                         }
@@ -376,16 +427,30 @@
                 const pattern = currentPattern;
                 const taal = taals[currentTaal];
 
+                if (currentStep === 0) {
+                    cycleCount++;
+                }
+
+                let stepToPlay = currentStep;
+                if (currentMode === 'chakrabhram' && cycleCount % 2 === 0) {
+                    stepToPlay = taal.matras - 1 - currentStep;
+                }
+
                 // Проигрываем звук, если он есть
-                const currentItem = pattern[currentStep];
-                if (currentItem.sound !== null) {
-                    if (currentItem.break) {
-                        // Проигрываем сбивку
-                        const duration = secondsPerBeat * currentItem.break.duration;
-                        playBreak(nextNoteTime, duration, currentItem.break.type, currentItem.break.soundIndex);
-                    } else {
-                        // Обычный звук
-                        playSound(currentItem.sound, nextNoteTime);
+                const currentItem = pattern[stepToPlay];
+
+                if (cycleCount > 0 && cycleCount % 4 === 0 && currentStep === taal.matras - 1) {
+                    playBreak(nextNoteTime, secondsPerBeat * 2, 'visphotak', 0, currentStep);
+                } else {
+                    if (currentItem.sound !== null) {
+                        if (currentItem.break) {
+                            // Проигрываем сбивку
+                            const duration = secondsPerBeat * currentItem.break.duration;
+                            playBreak(nextNoteTime, duration, currentItem.break.type, currentItem.break.soundIndex, stepToPlay);
+                        } else {
+                            // Обычный звук
+                            playSound(currentItem.sound, nextNoteTime);
+                        }
                     }
                 }
 
@@ -473,6 +538,10 @@
             breakTypeSelect.addEventListener('change', () => {
                 breakType = breakTypeSelect.value;
                 generatePatternAndDisplay();
+            });
+
+            modeSelect.addEventListener('change', () => {
+                currentMode = modeSelect.value;
             });
 
             playBtn.addEventListener('click', togglePlayback);
