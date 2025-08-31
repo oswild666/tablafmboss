@@ -65,6 +65,7 @@
         let pitchAccentAmount = 0;
         let velocityAccentAmount = 0;
         let swingAmount = 0;
+        let outputMode = 'internal';
 
         // Настройки FM для каждого звука
         const soundSettings = [
@@ -250,12 +251,21 @@
             analyser.connect(audioCtx.destination);
 
             // Запуск и остановка
-            carrier.start(time);
-            modulator1.start(time);
-            modulator2.start(time);
-            carrier.stop(time + 0.001 + decay);
-            modulator1.stop(time + 0.001 + decay);
-            modulator2.stop(time + 0.001 + decay);
+            if (outputMode === 'internal' || outputMode === 'both') {
+                carrier.start(time);
+                modulator1.start(time);
+                modulator2.start(time);
+                carrier.stop(time + 0.001 + decay);
+                modulator1.stop(time + 0.001 + decay);
+                modulator2.stop(time + 0.001 + decay);
+            }
+
+            if (midiOutput && (outputMode === 'midi' || outputMode === 'both')) {
+                const midiNote = 60 + soundIndex;
+                const velocity = Math.round(finalVolume * 127);
+                midiOutput.send([0x90, midiNote, velocity]);
+                midiOutput.send([0x80, midiNote, 0], window.performance.now() + 50.0);
+            }
 
             // Highlight the sound selector button
             const soundButton = document.querySelector(`.sound-selector-btn[data-sound="${soundIndex}"]`);
@@ -628,6 +638,11 @@
                 swingValue.textContent = swingSlider.value;
             });
 
+            const outputModeSelect = document.getElementById('output-mode-select');
+            outputModeSelect.addEventListener('change', () => {
+                outputMode = outputModeSelect.value;
+            });
+
             taalSelect.addEventListener('change', () => {
                 currentTaal = taalSelect.value;
                 taalInfo.textContent = taalInfoText[currentTaal];
@@ -738,5 +753,37 @@
             displayPattern(currentPattern);
         }
 
+        // MIDI
+        let midiAccess = null;
+        let midiOutput = null;
+        const midiOutputSelect = document.getElementById('midi-output-select');
+
+        function onMIDISuccess(midi) {
+            midiAccess = midi;
+            const outputs = midiAccess.outputs.values();
+            midiOutputSelect.innerHTML = '';
+            for (let output = outputs.next(); output && !output.done; output = outputs.next()) {
+                const option = document.createElement('option');
+                option.value = output.value.id;
+                option.text = output.value.name;
+                midiOutputSelect.appendChild(option);
+            }
+
+            midiOutputSelect.addEventListener('change', () => {
+                midiOutput = midiAccess.outputs.get(midiOutputSelect.value);
+            });
+        }
+
+        function onMIDIFailure() {
+            console.log('Could not access your MIDI devices.');
+        }
+
         // Запуск при загрузке
-        window.addEventListener('load', init);
+        window.addEventListener('load', () => {
+            init();
+            if (navigator.requestMIDIAccess) {
+                navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+            } else {
+                console.log('WebMIDI is not supported in this browser.');
+            }
+        });
