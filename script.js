@@ -11,6 +11,12 @@
         const breakFrequencyValue = document.getElementById('break-frequency-value');
         const complexitySlider = document.getElementById('complexity');
         const complexityValue = document.getElementById('complexity-value');
+        const pitchAccentSlider = document.getElementById('pitch-accent');
+        const velocityAccentSlider = document.getElementById('velocity-accent');
+        const swingSlider = document.getElementById('swing');
+        const pitchAccentValue = document.getElementById('pitch-accent-value');
+        const velocityAccentValue = document.getElementById('velocity-accent-value');
+        const swingValue = document.getElementById('swing-value');
         const taalSelect = document.getElementById('taal-select');
         const breakTypeSelect = document.getElementById('break-type');
         const modeSelect = document.getElementById('mode-select');
@@ -56,6 +62,9 @@
         let dataArray;
         let cycleCount = 0;
         let currentMode = 'normal';
+        let pitchAccentAmount = 0;
+        let velocityAccentAmount = 0;
+        let swingAmount = 0;
 
         // Настройки FM для каждого звука
         const soundSettings = [
@@ -192,7 +201,7 @@
         }
 
         // Создание FM-перкуссии
-        function playSound(soundIndex, time, isBreak = false, volumeMultiplier = 1.0) {
+        function playSound(soundIndex, time, accent, isBreak = false, volumeMultiplier = 1.0) {
             const settings = soundSettings[soundIndex];
 
             // Для сбивок уменьшаем длительность
@@ -201,7 +210,7 @@
             // Несущий осциллятор
             const carrier = audioCtx.createOscillator();
             carrier.type = 'sine';
-            carrier.frequency.value = settings.pitch;
+            carrier.frequency.value = settings.pitch + (accent.pitch ? pitchAccentAmount : 0);
 
             // Модулирующий осциллятор 1
             const modulator1 = audioCtx.createOscillator();
@@ -224,7 +233,11 @@
             // Узел огибающей
             const envelope = audioCtx.createGain();
             envelope.gain.setValueAtTime(0, time);
-            envelope.gain.linearRampToValueAtTime(settings.volume * masterVolume * volumeMultiplier, time + 0.001);
+            let finalVolume = settings.volume * masterVolume * volumeMultiplier;
+            if (accent.velocity) {
+                finalVolume *= (1 + velocityAccentAmount / 100);
+            }
+            envelope.gain.linearRampToValueAtTime(finalVolume, time + 0.001);
             envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.001 + decay);
 
             // Соединения (mod2 -> mod1 -> carrier)
@@ -368,9 +381,28 @@
                     }
                 }
 
+                const accent = { pitch: false, velocity: false };
+                const isImportantBeat = taal.sam.includes(i) || taal.vibhag.reduce((acc, val, index) => {
+                    const vibhagStart = taal.vibhag.slice(0, index).reduce((a, b) => a + b, 0);
+                    if (i === vibhagStart) {
+                        acc = true;
+                    }
+                    return acc;
+                }, false);
+
+                if (sound !== null && Math.random() < 0.3) {
+                    if (isImportantBeat || Math.random() < 0.5) {
+                        accent.pitch = true;
+                    }
+                    if (isImportantBeat || Math.random() < 0.5) {
+                        accent.velocity = true;
+                    }
+                }
+
                 pattern.push({
                     sound: sound,
-                    break: breakInfo
+                    break: breakInfo,
+                    accent: accent
                 });
             }
 
@@ -478,7 +510,7 @@
                             playBreak(nextNoteTime, duration, currentItem.break.type, currentItem.break.soundIndex, stepToPlay);
                         } else {
                             // Обычный звук
-                            playSound(currentItem.sound, nextNoteTime);
+                            playSound(currentItem.sound, nextNoteTime, currentItem.accent);
                         }
                     }
                 }
@@ -491,7 +523,12 @@
 
                 // Переход к следующему шагу
                 currentStep = (currentStep + 1) % taal.matras;
-                nextNoteTime += secondsPerBeat;
+
+                let swingDelay = 0;
+                if (swingAmount > 0 && currentStep % 2 !== 0) {
+                    swingDelay = (swingAmount / 100) * (secondsPerBeat / 2);
+                }
+                nextNoteTime += secondsPerBeat + swingDelay;
             }
 
             // Повторяем планирование
@@ -565,6 +602,21 @@
                 complexity = parseInt(complexitySlider.value);
                 const levels = ['Очень низкая', 'Низкая', 'Ниже среднего', 'Средняя', 'Выше среднего', 'Высокая', 'Очень высокая'];
                 complexityValue.textContent = levels[Math.min(6, Math.floor(complexity / 1.5))];
+            });
+
+            pitchAccentSlider.addEventListener('input', () => {
+                pitchAccentAmount = parseInt(pitchAccentSlider.value);
+                pitchAccentValue.textContent = pitchAccentSlider.value;
+            });
+
+            velocityAccentSlider.addEventListener('input', () => {
+                velocityAccentAmount = parseInt(velocityAccentSlider.value);
+                velocityAccentValue.textContent = velocityAccentSlider.value;
+            });
+
+            swingSlider.addEventListener('input', () => {
+                swingAmount = parseInt(swingSlider.value);
+                swingValue.textContent = swingSlider.value;
             });
 
             taalSelect.addEventListener('change', () => {
