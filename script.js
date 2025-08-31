@@ -79,6 +79,35 @@
             { pitch: 180, modDepth: 120, volume: 0.5, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }  // Ge
         ];
 
+        function randomizeSoundParameters(soundIndex) {
+            const settings = soundSettings[soundIndex];
+
+            // Randomize main parameters
+            settings.pitch = Math.floor(Math.random() * (700 - 50 + 1)) + 50;
+            settings.modDepth = Math.floor(Math.random() * (500 - 20 + 1)) + 20;
+            settings.volume = Math.random();
+            settings.decay = Math.random() * (1 - 0.01) + 0.01;
+
+            // Randomize modulator 2 parameters
+            const mod2 = settings.mod2;
+            mod2.pitch = Math.floor(Math.random() * 12);
+            mod2.octave = Math.floor(Math.random() * 9);
+            mod2.detune = Math.floor(Math.random() * 201) - 100;
+            mod2.depth = Math.floor(Math.random() * 1001);
+        }
+
+        function randomizeAllSounds() {
+            for (let i = 0; i < soundSettings.length; i++) {
+                randomizeSoundParameters(i);
+            }
+            updateFMSettingsUI();
+        }
+
+        function randomizeSingleSound() {
+            randomizeSoundParameters(currentSoundIndex);
+            updateFMSettingsUI();
+        }
+
         // Создание визуализатора
         function createVisualizer() {
             visualizer.innerHTML = '';
@@ -728,6 +757,12 @@
             playBtn.addEventListener('click', togglePlayback);
 
             generateBtn.addEventListener('click', generatePatternAndDisplay);
+
+            const randomizeAllBtn = document.getElementById('randomize-all-btn');
+            randomizeAllBtn.addEventListener('click', randomizeAllSounds);
+
+            const randomizeSingleBtn = document.getElementById('randomize-single-btn');
+            randomizeSingleBtn.addEventListener('click', randomizeSingleSound);
 
             // Audition buttons
             document.querySelectorAll('.audition-btn').forEach(btn => {

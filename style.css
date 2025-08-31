@@ -220,6 +220,19 @@ button:hover {
     opacity: 0.8;
 }
 
+.secondary-btn {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
+    font-weight: normal;
+    margin-top: 5px;
+    border: 1px solid #555;
+}
+
+.secondary-btn:hover {
+    background-color: #4a4a4a;
+    opacity: 1;
+}
+
 .visualization {
     height: 80px;
     background: rgba(0, 0, 0, 0.2);
