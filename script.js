@@ -30,6 +30,13 @@
         const modDepthValue = document.getElementById('mod-depth-value');
         const soundVolumeValue = document.getElementById('sound-volume-value');
         const decayValue = document.getElementById('decay-value');
+        const mod2PitchSelect = document.getElementById('mod2-pitch-select');
+        const mod2OctaveSlider = document.getElementById('mod2-octave-slider');
+        const mod2DetuneSlider = document.getElementById('mod2-detune-slider');
+        const mod2DepthSlider = document.getElementById('mod2-depth-slider');
+        const mod2OctaveValue = document.getElementById('mod2-octave-value');
+        const mod2DetuneValue = document.getElementById('mod2-detune-value');
+        const mod2DepthValue = document.getElementById('mod2-depth-value');
 
         // Глобальные переменные
         let isPlaying = false;
@@ -52,14 +59,14 @@
 
         // Настройки FM для каждого звука
         const soundSettings = [
-            { pitch: 120, modDepth: 80, volume: 0.7, decay: 0.2 },  // Dha
-            { pitch: 150, modDepth: 100, volume: 0.6, decay: 0.2 }, // Dhin
-            { pitch: 300, modDepth: 200, volume: 0.5, decay: 0.2 }, // Ta
-            { pitch: 350, modDepth: 250, volume: 0.5, decay: 0.2 }, // Tin
-            { pitch: 250, modDepth: 180, volume: 0.4, decay: 0.2 }, // Na
-            { pitch: 400, modDepth: 300, volume: 0.4, decay: 0.2 }, // Tirkita
-            { pitch: 200, modDepth: 150, volume: 0.5, decay: 0.2 }, // Kat
-            { pitch: 180, modDepth: 120, volume: 0.5, decay: 0.2 }  // Ge
+            { pitch: 120, modDepth: 80, volume: 0.7, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } },  // Dha
+            { pitch: 150, modDepth: 100, volume: 0.6, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }, // Dhin
+            { pitch: 300, modDepth: 200, volume: 0.5, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }, // Ta
+            { pitch: 350, modDepth: 250, volume: 0.5, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }, // Tin
+            { pitch: 250, modDepth: 180, volume: 0.4, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }, // Na
+            { pitch: 400, modDepth: 300, volume: 0.4, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }, // Tirkita
+            { pitch: 200, modDepth: 150, volume: 0.5, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }, // Kat
+            { pitch: 180, modDepth: 120, volume: 0.5, decay: 0.2, mod2: { pitch: 0, octave: 4, detune: 0, depth: 0 } }  // Ge
         ];
 
         // Создание визуализатора
@@ -177,6 +184,13 @@
             }
         };
 
+        function noteToFrequency(note, octave, detune) {
+            const A4 = 440;
+            const a = Math.pow(2, 1/12);
+            const freq = A4 * Math.pow(a, (octave - 4) * 12 + note - 9) * Math.pow(2, detune / 1200);
+            return freq;
+        }
+
         // Создание FM-перкуссии
         function playSound(soundIndex, time, isBreak = false, volumeMultiplier = 1.0) {
             const settings = soundSettings[soundIndex];
@@ -189,14 +203,23 @@
             carrier.type = 'sine';
             carrier.frequency.value = settings.pitch;
 
-            // Модулирующий осциллятор
-            const modulator = audioCtx.createOscillator();
-            modulator.type = 'sine';
-            modulator.frequency.value = settings.pitch * 0.7;
+            // Модулирующий осциллятор 1
+            const modulator1 = audioCtx.createOscillator();
+            modulator1.type = 'sine';
+            modulator1.frequency.value = settings.pitch * 0.7;
 
-            // Узел усиления для модуляции
-            const modulationGain = audioCtx.createGain();
-            modulationGain.gain.value = settings.modDepth;
+            // Узел усиления для модуляции 1
+            const modulation1Gain = audioCtx.createGain();
+            modulation1Gain.gain.value = settings.modDepth;
+
+            // Модулирующий осциллятор 2
+            const modulator2 = audioCtx.createOscillator();
+            modulator2.type = 'sine';
+            modulator2.frequency.value = noteToFrequency(settings.mod2.pitch, settings.mod2.octave, settings.mod2.detune);
+
+            // Узел усиления для модуляции 2
+            const modulation2Gain = audioCtx.createGain();
+            modulation2Gain.gain.value = settings.mod2.depth;
 
             // Узел огибающей
             const envelope = audioCtx.createGain();
@@ -204,18 +227,22 @@
             envelope.gain.linearRampToValueAtTime(settings.volume * masterVolume * volumeMultiplier, time + 0.001);
             envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.001 + decay);
 
-            // Соединения
-            modulator.connect(modulationGain);
-            modulationGain.connect(carrier.frequency);
+            // Соединения (mod2 -> mod1 -> carrier)
+            modulator2.connect(modulation2Gain);
+            modulation2Gain.connect(modulator1.frequency);
+            modulator1.connect(modulation1Gain);
+            modulation1Gain.connect(carrier.frequency);
             carrier.connect(envelope);
             envelope.connect(analyser);
             analyser.connect(audioCtx.destination);
 
             // Запуск и остановка
             carrier.start(time);
-            modulator.start(time);
+            modulator1.start(time);
+            modulator2.start(time);
             carrier.stop(time + 0.001 + decay);
-            modulator.stop(time + 0.001 + decay);
+            modulator1.stop(time + 0.001 + decay);
+            modulator2.stop(time + 0.001 + decay);
         }
 
         // Создание различных типов сбивок
@@ -499,11 +526,18 @@
             modDepthSlider.value = settings.modDepth;
             soundVolumeSlider.value = settings.volume;
             decaySlider.value = settings.decay;
+            mod2PitchSelect.value = settings.mod2.pitch;
+            mod2OctaveSlider.value = settings.mod2.octave;
+            mod2DetuneSlider.value = settings.mod2.detune;
+            mod2DepthSlider.value = settings.mod2.depth;
 
             pitchValue.textContent = settings.pitch;
             modDepthValue.textContent = settings.modDepth;
             soundVolumeValue.textContent = Math.round(settings.volume * 100) + '%';
             decayValue.textContent = settings.decay.toFixed(2);
+            mod2OctaveValue.textContent = settings.mod2.octave;
+            mod2DetuneValue.textContent = settings.mod2.detune;
+            mod2DepthValue.textContent = settings.mod2.depth;
         }
 
         // Инициализация
@@ -609,6 +643,25 @@
             decaySlider.addEventListener('input', () => {
                 soundSettings[currentSoundIndex].decay = parseFloat(decaySlider.value);
                 decayValue.textContent = parseFloat(decaySlider.value).toFixed(2);
+            });
+
+            mod2PitchSelect.addEventListener('change', () => {
+                soundSettings[currentSoundIndex].mod2.pitch = parseInt(mod2PitchSelect.value);
+            });
+
+            mod2OctaveSlider.addEventListener('input', () => {
+                soundSettings[currentSoundIndex].mod2.octave = parseInt(mod2OctaveSlider.value);
+                mod2OctaveValue.textContent = mod2OctaveSlider.value;
+            });
+
+            mod2DetuneSlider.addEventListener('input', () => {
+                soundSettings[currentSoundIndex].mod2.detune = parseInt(mod2DetuneSlider.value);
+                mod2DetuneValue.textContent = mod2DetuneSlider.value;
+            });
+
+            mod2DepthSlider.addEventListener('input', () => {
+                soundSettings[currentSoundIndex].mod2.depth = parseInt(mod2DepthSlider.value);
+                mod2DepthValue.textContent = mod2DepthSlider.value;
             });
 
             // Инициализация первого паттерна
