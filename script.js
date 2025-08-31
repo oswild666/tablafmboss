@@ -281,6 +281,7 @@
         function playBreak(time, duration, breakType, soundIndex, currentStep) {
             let numNotes, noteDuration;
             const secondsPerBeat = 60.0 / tempo;
+            const taal = taals[currentStyle];
 
             const breakPattern = breakPatterns[breakType];
             if (breakPattern) {
@@ -290,7 +291,7 @@
                 if (breakType === 'zalzala' && currentStep !== 8) return;
                 if (breakType === 'phislana' && currentStep !== 10) return;
                 if (breakType === 'mrigchala' && currentStep !== 13) return;
-                if (breakType === 'visphotak' && (cycleCount % 4 !== 0 || currentStep !== taals[currentTaal].matras - 1)) return;
+                if (breakType === 'visphotak' && (!taal || cycleCount % 4 !== 0 || currentStep !== taal.matras - 1)) return;
 
 
                 let noteSpacing = duration / numNotes;
@@ -503,7 +504,8 @@
 
         // Отображение паттерна
         function displayPattern(pattern) {
-            const matras = taals[currentStyle] ? taals[currentStyle].matras : 16;
+            const taal = taals[currentStyle];
+            const matras = taal ? taal.matras : pattern.length;
             rhythmGrid.innerHTML = '';
             rhythmGrid.style.gridTemplateColumns = `repeat(${matras}, 1fr)`;
 
@@ -532,10 +534,12 @@
                     }
                 }
 
-                if (taal.sam.includes(index)) {
-                    cell.classList.add('sam');
-                } else if (taal.khali.includes(index)) {
-                    cell.classList.add('khali');
+                if (taal && taal.sam && taal.khali) {
+                    if (taal.sam.includes(index)) {
+                        cell.classList.add('sam');
+                    } else if (taal.khali.includes(index)) {
+                        cell.classList.add('khali');
+                    }
                 }
 
                 rhythmGrid.appendChild(cell);
@@ -559,31 +563,36 @@
             // Планируем звуки на ближайшие 100 мс
             while (nextNoteTime < currentTime + 0.1) {
                 const pattern = currentPattern;
-                const matras = taals[currentStyle] ? taals[currentStyle].matras : 16;
+                const taal = taals[currentStyle];
+                const matras = taal ? taal.matras : pattern.length;
+
+                if (!matras) return; // Prevent division by zero if pattern is empty
 
                 if (currentStep === 0) {
                     cycleCount++;
                 }
 
                 let stepToPlay = currentStep;
-                if (currentMode === 'chakrabhram' && cycleCount % 2 === 0) {
-                    stepToPlay = taal.matras - 1 - currentStep;
+                if (taal && currentMode === 'chakrabhram' && cycleCount % 2 === 0) {
+                    stepToPlay = matras - 1 - currentStep;
                 }
 
                 // Проигрываем звук, если он есть
                 const currentItem = pattern[stepToPlay];
 
-                if (cycleCount > 0 && cycleCount % 4 === 0 && currentStep === matras - 1) {
-                    playBreak(nextNoteTime, secondsPerBeat * 2, 'visphotak', 0, currentStep);
-                } else {
-                    if (currentItem.sound !== null) {
-                        if (currentItem.break) {
-                            // Проигрываем сбивку
-                            const duration = secondsPerBeat * currentItem.break.duration;
-                            playBreak(nextNoteTime, duration, currentItem.break.type, currentItem.break.soundIndex, stepToPlay);
-                        } else {
-                            // Обычный звук
-                            playSound(currentItem.sound, nextNoteTime, currentItem.accent);
+                if (currentItem) {
+                    if (cycleCount > 0 && cycleCount % 4 === 0 && currentStep === matras - 1) {
+                        playBreak(nextNoteTime, secondsPerBeat * 2, 'visphotak', 0, currentStep);
+                    } else {
+                        if (currentItem.sound !== null) {
+                            if (currentItem.break) {
+                                // Проигрываем сбивку
+                                const duration = secondsPerBeat * currentItem.break.duration;
+                                playBreak(nextNoteTime, duration, currentItem.break.type, currentItem.break.soundIndex, stepToPlay);
+                            } else {
+                                // Обычный звук
+                                playSound(currentItem.sound, nextNoteTime, currentItem.accent);
+                            }
                         }
                     }
                 }
@@ -595,7 +604,7 @@
                 });
 
                 // Переход к следующему шагу
-                currentStep = (currentStep + 1) % taal.matras;
+                currentStep = (currentStep + 1) % matras;
 
                 let swingDelay = 0;
                 if (swingAmount > 0 && currentStep % 2 !== 0) {
