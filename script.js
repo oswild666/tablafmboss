@@ -66,6 +66,7 @@
         let velocityAccentAmount = 0;
         let swingAmount = 0;
         let outputMode = 'internal';
+        let activeButterflyCount = 0;
 
         // Настройки FM для каждого звука
         const soundSettings = [
@@ -669,8 +670,16 @@
         }
 
         function createButterfly() {
+            if (activeButterflyCount >= 16) {
+                return;
+            }
+            activeButterflyCount++;
+
             const scene = document.getElementById('butterfly-scene');
-            if (!scene) return;
+            if (!scene) {
+                activeButterflyCount--; // Decrement if scene not found
+                return;
+            }
 
             const butterfly = document.createElement('div');
             butterfly.className = 'butterfly';
@@ -681,6 +690,7 @@
             // Remove the butterfly after the animation is complete
             setTimeout(() => {
                 butterfly.remove();
+                activeButterflyCount--;
             }, 20000); // Animation is 12-18s, 20s is a safe buffer
         }
 

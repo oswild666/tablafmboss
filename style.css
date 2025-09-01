@@ -496,8 +496,8 @@ footer {
 }
 
 @keyframes fly {
-  0% { transform: rotateX(90deg) rotate(calc(var(--random) * 360deg)) translateX(200px) translateZ(-70vh); }
-  100% { transform: rotateX(90deg) rotate(calc(var(--random) * 360deg - 720deg)) translateX(200px) translateZ(70vh); }
+  0% { transform: rotateX(90deg) rotate(calc(var(--random) * 360deg)) translateX(30px) translateZ(-70vh); }
+  100% { transform: rotateX(90deg) rotate(calc(var(--random) * 360deg - 720deg)) translateX(30px) translateZ(70vh); }
 }
 
 @keyframes flapB {
