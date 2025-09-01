@@ -456,6 +456,18 @@ footer {
     color: var(--bg-color) !important;
 }
 
+.scala-upload-group {
+    grid-column: 1 / -1; /* Make it span both columns */
+    text-align: center;
+}
+
+#scala-filename {
+    display: block;
+    margin-top: 5px;
+    font-size: var(--font-size-sm);
+    opacity: 0.7;
+}
+
 /* Butterfly Animation Styles */
 .scene {
   position: absolute;

@@ -67,6 +67,7 @@
         let swingAmount = 0;
         let outputMode = 'internal';
         let activeButterflyCount = 0;
+        let currentScale = null;
 
         // Настройки FM для каждого звука
         const soundSettings = [
@@ -107,6 +108,70 @@
         function randomizeSingleSound() {
             randomizeSoundParameters(currentSoundIndex);
             updateFMSettingsUI();
+        }
+
+        function parseScalaFile(fileContent) {
+            const lines = fileContent.split(/[\r\n]+/).filter(line => {
+                return line.trim() !== '' && !line.startsWith('!');
+            });
+
+            if (lines.length < 2) {
+                console.error("Invalid Scala file: not enough lines.");
+                return null;
+            }
+
+            // const description = lines.shift(); // We don't use the description
+            // const noteCount = parseInt(lines.shift(), 10); // Or the note count
+            lines.shift(); // Skip description
+            lines.shift(); // Skip note count
+
+            const ratios = [1.0]; // Add the implicit 1/1 root
+
+            for (const line of lines) {
+                let ratio;
+                const trimmedLine = line.trim().split(/\s+/)[0]; // Get first part of the line
+
+                if (trimmedLine.includes('.')) {
+                    // It's a cents value
+                    const cents = parseFloat(trimmedLine);
+                    ratio = Math.pow(2, cents / 1200);
+                } else if (trimmedLine.includes('/')) {
+                    // It's a ratio
+                    const parts = trimmedLine.split('/');
+                    const numerator = parseInt(parts[0], 10);
+                    const denominator = parseInt(parts[1], 10);
+                    if (denominator === 0) continue; // Avoid division by zero
+                    ratio = numerator / denominator;
+                } else {
+                    // It's an integer, treat as n/1
+                    ratio = parseInt(trimmedLine, 10);
+                }
+
+                if (!isNaN(ratio)) {
+                    ratios.push(ratio);
+                }
+            }
+
+            return ratios;
+        }
+
+        function applyScalaTuning() {
+            if (!currentScale || currentScale.length === 0) {
+                console.error("No valid scale loaded to apply.");
+                return;
+            }
+
+            const baseFreq = 220.0; // A3
+
+            for (let i = 0; i < soundSettings.length; i++) {
+                // Use modulo to wrap around the scale if it has fewer than 8 notes
+                const ratio = currentScale[i % currentScale.length];
+                const newPitch = baseFreq * ratio;
+                soundSettings[i].pitch = newPitch;
+            }
+
+            updateFMSettingsUI();
+            console.log("Applied new tuning based on Scala file.");
         }
 
         // Создание визуализатора
@@ -874,6 +939,39 @@
 
             // Инициализация FM-настроек
             updateFMSettingsUI();
+
+            // Scala File Upload Event Listeners
+            const uploadScalaBtn = document.getElementById('upload-scala-btn');
+            const scalaUploadInput = document.getElementById('scala-upload');
+            const scalaFilenameSpan = document.getElementById('scala-filename');
+
+            uploadScalaBtn.addEventListener('click', () => {
+                scalaUploadInput.click();
+            });
+
+            scalaUploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    const parsedScale = parseScalaFile(content);
+
+                    if (parsedScale) {
+                        currentScale = parsedScale;
+                        applyScalaTuning();
+                        scalaFilenameSpan.textContent = file.name;
+                        console.log("Successfully loaded and applied Scala file:", file.name);
+                    } else {
+                        alert("Failed to parse Scala file. Please check the file format and console for errors.");
+                        scalaFilenameSpan.textContent = "Load failed.";
+                    }
+                };
+                reader.readAsText(file);
+            });
         }
 
         // Генерация и отображение паттерна
