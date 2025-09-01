@@ -232,6 +232,7 @@
 
         // Создание FM-перкуссии
         function playSound(soundIndex, time, accent, isBreak = false, volumeMultiplier = 1.0) {
+            createButterfly();
             const settings = soundSettings[soundIndex];
 
             // Для сбивок уменьшаем длительность
@@ -665,6 +666,22 @@
                 rhythmScheduler();
                 updateVisualizer();
             }
+        }
+
+        function createButterfly() {
+            const scene = document.getElementById('butterfly-scene');
+            if (!scene) return;
+
+            const butterfly = document.createElement('div');
+            butterfly.className = 'butterfly';
+            butterfly.style.setProperty('--random', Math.random());
+
+            scene.appendChild(butterfly);
+
+            // Remove the butterfly after the animation is complete
+            setTimeout(() => {
+                butterfly.remove();
+            }, 20000); // Animation is 12-18s, 20s is a safe buffer
         }
 
         // Обновление FM-настроек в UI
